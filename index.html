@@ -7,36 +7,39 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif; }
     body { background: #f4f5f7; color: #333; display: flex; justify-content: center; min-height: 100vh; padding: 20px 16px; }
-    .container { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; padding: 24px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
+    .container { width: 100%; max-width: 420px; background: #fff; border-radius: 24px; padding: 28px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
     
     header { text-align: center; margin-bottom: 24px; }
-    header h1 { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 6px; }
-    header p { font-size: 13px; color: #666; line-height: 1.4; }
+    header h1 { font-size: 22px; font-weight: 800; color: #111; margin-bottom: 6px; cursor: pointer; user-select: none; }
+    header p { font-size: 13px; color: #64748b; line-height: 1.4; }
 
+    /* 스탬프 보드 그리드 */
     .stamp-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-bottom: 24px; }
     .stamp-slot {
-      width: 95px; height: 110px; background: #fafafa; border: 2px dashed #d1d5db; border-radius: 16px;
+      width: 95px; height: 110px; background: #fafafa; border: 2px dashed #d1d5db; border-radius: 18px;
       display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;
-      position: relative; transition: all 0.2s ease;
+      position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .stamp-slot:active { transform: scale(0.96); }
-    .stamp-slot .badge-icon { width: 44px; height: 44px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #9ca3af; margin-bottom: 8px; }
+    .stamp-slot:active { transform: scale(0.95); }
+    .stamp-slot .badge-icon { width: 48px; height: 48px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #9ca3af; margin-bottom: 8px; overflow: hidden; }
+    .stamp-slot .badge-icon img { width: 100%; height: 100%; object-fit: cover; }
     .stamp-slot .title { font-size: 12px; font-weight: 600; color: #4b5563; text-align: center; }
 
+    /* 도장 획득 시 슬롯 스타일 */
     .stamp-slot.stamped { border: 2px solid #ef4444; background: #fef2f2; }
     .stamp-slot.stamped .badge-icon { background: #ef4444; color: #fff; font-weight: bold; }
     .stamp-slot.stamped .title { color: #dc2626; }
 
-    /* 상태 알림 박스 */
-    .status-box { background: #f8fafc; border-radius: 12px; padding: 14px; text-align: center; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 12px; }
+    /* 상태 박스 */
+    .status-box { background: #f8fafc; border-radius: 14px; padding: 14px; text-align: center; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 12px; }
     .status-box.all-complete { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-    .status-box.redeemed { background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1; text-decoration: line-through; }
+    .status-box.redeemed { background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1; }
 
     /* 사은품 수령 버튼 & 배너 */
     .reward-area { display: none; margin-top: 4px; }
     .btn-reward {
       width: 100%; padding: 16px; background: #e11d48; color: #fff; font-size: 16px; font-weight: 700;
-      border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(225,29,72,0.3);
+      border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(225,29,72,0.3);
       animation: pulse 1.8s infinite;
     }
     @keyframes pulse {
@@ -48,51 +51,69 @@
       padding: 16px; text-align: center; color: #64748b; font-weight: 700; font-size: 15px; margin-top: 4px;
     }
 
-    /* 팝업 모달 공통 */
+    /* 팝업 모달 공통 레이아웃 */
     .modal-overlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      justify-content: center; align-items: center; padding: 20px; z-index: 100;
+      justify-content: center; align-items: center; padding: 20px; z-index: 100; backdrop-filter: blur(2px);
     }
     .modal-overlay.active { display: flex; }
-    .modal-box { background: #fff; width: 100%; max-width: 340px; border-radius: 18px; padding: 22px; text-align: center; }
+    .modal-box { background: #fff; width: 100%; max-width: 330px; border-radius: 20px; padding: 24px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
     .modal-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-    .modal-box p.desc { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 18px; text-align: left; background: #f1f5f9; padding: 12px; border-radius: 8px; white-space: pre-line; }
+    .modal-box p.desc { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 18px; text-align: left; background: #f1f5f9; padding: 12px; border-radius: 10px; white-space: pre-line; }
     .modal-box input {
-      width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;
-      font-size: 15px; text-align: center; margin-bottom: 12px; outline: none;
+      width: 100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      font-size: 15px; text-align: center; margin-bottom: 14px; outline: none; transition: border-color 0.2s;
     }
     .modal-box input:focus { border-color: #2563eb; }
     .btn-group { display: flex; gap: 8px; }
-    .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn { flex: 1; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .btn-submit { background: #2563eb; color: #fff; }
     .btn-close { background: #e2e8f0; color: #475569; }
     .btn-staff-confirm { background: #e11d48; color: #fff; }
+
+    /* [신규] 도장 획득 축하 팝업 전용 스타일 */
+    .stamp-acquired-box { background: #fff; width: 100%; max-width: 320px; border-radius: 24px; padding: 28px 20px; text-align: center; }
+    .stamp-pop-animation {
+      width: 110px; height: 110px; margin: 0 auto 16px; border-radius: 50%;
+      background: #fef2f2; border: 3px solid #ef4444; display: flex; align-items: center; justify-content: center;
+      animation: stampImpact 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      overflow: hidden; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);
+    }
+    .stamp-pop-animation img { width: 100%; height: 100%; object-fit: cover; }
+    .stamp-pop-animation span { font-size: 46px; color: #ef4444; font-weight: bold; }
+    @keyframes stampImpact {
+      0% { transform: scale(2.2) rotate(-15deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .stamp-acquired-box h2 { font-size: 20px; font-weight: 800; color: #111; margin-bottom: 6px; }
+    .stamp-acquired-box p { font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.4; }
+    .btn-confirm-acquired { width: 100%; padding: 14px; background: #111; color: #fff; font-size: 14px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <header>
-    <h1>스탬프 투어</h1>
+    <h1 id="mainTitle">스탬프 투어</h1>
     <p>각 부스를 체험하고 암호를 입력해 도장을 모으세요.<br>5개를 모두 모으면 사은품을 드립니다!</p>
   </header>
 
   <div class="stamp-grid" id="stampGrid"></div>
   <div class="status-box" id="statusBox">진행도: 0 / 5</div>
 
-  <!-- 사은품 수령 버튼 영역 (5개 완료 시 활성화) -->
+  <!-- 사은품 수령 버튼 -->
   <div class="reward-area" id="rewardArea">
     <button class="btn-reward" onclick="openStaffModal()">🎁 사은품 수령하기 (스태프 확인)</button>
   </div>
 
-  <!-- 수령 완료 안내 배너 (지급 완료 후 고정) -->
+  <!-- 수령 완료 배너 -->
   <div class="reward-completed-badge" id="rewardCompletedBadge">
     ✓ 사은품 수령이 완료되었습니다.<br>
     <span style="font-size: 12px; font-weight: normal; color: #94a3b8;" id="redeemedTimeText"></span>
   </div>
 </div>
 
-<!-- 1. 부스 정보 및 암호 모달 -->
+<!-- 1. 부스 정보 및 암호 입력 모달 -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
     <h3 id="modalTitle">부스 이름</h3>
@@ -111,7 +132,19 @@
   </div>
 </div>
 
-<!-- 2. 스태프 확인 모달 -->
+<!-- 2. [신규] 도장 획득 축하 모달 (세련된 이미지/애니메이션 팝업) -->
+<div class="modal-overlay" id="stampSuccessModal">
+  <div class="stamp-acquired-box">
+    <div class="stamp-pop-animation" id="stampSuccessVisual">
+      <!-- 동적으로 이미지 또는 체크마크 삽입 -->
+    </div>
+    <h2 id="stampSuccessTitle">스탬프 획득!</h2>
+    <p id="stampSuccessSubtitle">부스 미션을 성공적으로 완료했습니다.</p>
+    <button class="btn-confirm-acquired" onclick="closeStampSuccessModal()">확인</button>
+  </div>
+</div>
+
+<!-- 3. 스태프 확인 모달 -->
 <div class="modal-overlay" id="staffModalOverlay">
   <div class="modal-box">
     <h3 style="color:#e11d48;">운영 본부 확인</h3>
@@ -131,16 +164,16 @@
   // ▼ Apps Script 웹 앱 URL 입력
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-hc5yc47KEGOjyZREZKCt0p7RezgLc8-AAKkQOYsnZ-w-TmJTyT1R-6PAg7AsxUOTyg/exec";
 
-  // ▼ 운영 스태프 확인용 비밀번호 (원하시는 4자리 등으로 변경하세요)
+  // ▼ 운영 스태프 확인용 비밀번호
   const STAFF_PIN = "0000";
 
-  // 부스 정보 및 정답 암호
+  // 부스 정보, 암호, 및 도장 이미지 경로 (이미지 파일이 있으면 stampImg에 파일명 입력)
   const booths = [
-    { id: 1, name: "부스 1", pass: "영화", desc: "위치: A구역 1번\n미션: 부스 방문 후 영화 퀴즈 풀기" },
-    { id: 2, name: "부스 2", pass: "진흥", desc: "위치: A구역 2번\n미션: 공식 인스타그램 팔로우 인증" },
-    { id: 3, name: "부스 3", pass: "위원회", desc: "위치: B구역 1번\n미션: 나만의 영화 명대사 카드 만들기" },
-    { id: 4, name: "부스 4", pass: "사랑", desc: "위치: B구역 2번\n미션: 인터랙티브 영상 체험존 참가" },
-    { id: 5, name: "부스 5", pass: "축제", desc: "위치: C구역 중앙\n미션: 만족도 설문조사 참여" }
+    { id: 1, name: "부스 1", pass: "영화", desc: "위치: A구역 1번\n미션: 부스 방문 후 영화 퀴즈 풀기", stampImg: "stamp1.png" },
+    { id: 2, name: "부스 2", pass: "진흥", desc: "위치: A구역 2번\n미션: 공식 인스타그램 팔로우 인증", stampImg: "stamp2.png" },
+    { id: 3, name: "부스 3", pass: "위원회", desc: "위치: B구역 1번\n미션: 나만의 영화 명대사 카드 만들기", stampImg: "stamp3.png" },
+    { id: 4, name: "부스 4", pass: "가치", desc: "위치: B구역 2번\n미션: 인터랙티브 영상 체험존 참가", stampImg: "stamp4.png" },
+    { id: 5, name: "부스 5", pass: "라운지", desc: "위치: C구역 중앙\n미션: 만족도 설문조사 참여", stampImg: "stamp5.png" }
   ];
 
   let currentBoothIndex = null;
@@ -171,15 +204,20 @@
       const slot = document.createElement('div');
       slot.className = `stamp-slot ${isDone ? 'stamped' : ''}`;
       
-      // 이미 사은품을 받았으면 슬롯 클릭 비활성화
       if (!redeemed) {
         slot.onclick = () => openBoothModal(idx);
       } else {
         slot.style.cursor = 'default';
       }
 
+      // 이미지가 존재하면 이미지로, 없으면 체크(✓) 표시
+      let iconContent = isDone ? '✓' : idx + 1;
+      if (isDone && b.stampImg) {
+        iconContent = `<img src="${b.stampImg}" alt="도장" onerror="this.onerror=null; this.parentNode.innerText='✓';">`;
+      }
+
       slot.innerHTML = `
-        <div class="badge-icon">${isDone ? '✓' : idx + 1}</div>
+        <div class="badge-icon">${iconContent}</div>
         <div class="title">${b.name}</div>
       `;
       grid.appendChild(slot);
@@ -248,13 +286,32 @@
       }
       closeModal();
       renderGrid();
-      alert(`[${targetBooth.name}] 스탬프가 찍혔습니다!`);
+      // 기존 alert 대신 세련된 획득 팝업 실행
+      openStampSuccessModal(targetBooth);
     } else {
       alert("암호가 올바르지 않습니다. 부스 스태프에게 확인해 주세요.");
     }
   }
 
-  // 스태프 모달 제어
+  // 도장 획득 축하 팝업 열기
+  function openStampSuccessModal(booth) {
+    const visual = document.getElementById('stampSuccessVisual');
+    if (booth.stampImg) {
+      visual.innerHTML = `<img src="${booth.stampImg}" alt="도장" onerror="this.onerror=null; this.parentNode.innerHTML='<span>✓</span>';">`;
+    } else {
+      visual.innerHTML = `<span>✓</span>`;
+    }
+
+    document.getElementById('stampSuccessTitle').innerText = `[${booth.name}] 스탬프 획득!`;
+    document.getElementById('stampSuccessSubtitle').innerText = "미션을 완료하여 도장이 정상 등록되었습니다.";
+    document.getElementById('stampSuccessModal').classList.add('active');
+  }
+
+  function closeStampSuccessModal() {
+    document.getElementById('stampSuccessModal').classList.remove('active');
+  }
+
+  // 스태프 확인 모달 제어
   function openStaffModal() {
     document.getElementById('staffPassInput').value = '';
     document.getElementById('staffModalOverlay').classList.add('active');
@@ -264,7 +321,6 @@
     document.getElementById('staffModalOverlay').classList.remove('active');
   }
 
-  // 스태프 수령 확인 처리
   function confirmRedeem() {
     const pin = document.getElementById('staffPassInput').value.trim();
     if (pin === STAFF_PIN) {
@@ -282,33 +338,8 @@
     }
   }
 
-  // 테스트용) 타이틀 5번 연속 터치 시 테스트 데이터 초기화
-let titleClickCount = 0;
-let titleClickTimer = null;
-
-document.querySelector('header h1').addEventListener('click', () => {
-  titleClickCount++;
-  clearTimeout(titleClickTimer);
-
-  if (titleClickCount >= 5) {
-    if (confirm('[테스트용] 모든 도장 및 수령 기록을 초기화하시겠습니까?')) {
-      localStorage.removeItem('booth_stamps');
-      localStorage.removeItem('booth_reward_redeemed');
-      localStorage.removeItem('booth_reward_time');
-      localStorage.removeItem('stamp_user_id'); // 새 유저 ID 발급
-      location.reload();
-    }
-    titleClickCount = 0;
-  }
-
-  titleClickTimer = setTimeout(() => {
-    titleClickCount = 0;
-  }, 1500);
-});
-  
-  // 구글 시트 전송 함수
   function sendSheetLog(boothName) {
-    if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("여기에_웹앱_URL")) {
+    if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx-hc5yc47KEGOjyZREZKCt0p7RezgLc8-AAKkQOYsnZ-w-TmJTyT1R-6PAg7AsxUOTyg/exec")) {
       fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -320,6 +351,25 @@ document.querySelector('header h1').addEventListener('click', () => {
       }).catch(err => console.log("전송 로그:", err));
     }
   }
+
+  // 타이틀 5번 연속 클릭 시 리셋 기능
+  let titleClicks = 0;
+  let resetTimer = null;
+  document.getElementById('mainTitle').addEventListener('click', () => {
+    titleClicks++;
+    clearTimeout(resetTimer);
+    if (titleClicks >= 5) {
+      if (confirm('[테스트 모드] 모든 도장 및 수령 기록을 초기화하시겠습니까?')) {
+        localStorage.removeItem('booth_stamps');
+        localStorage.removeItem('booth_reward_redeemed');
+        localStorage.removeItem('booth_reward_time');
+        localStorage.removeItem('stamp_user_id');
+        location.reload();
+      }
+      titleClicks = 0;
+    }
+    resetTimer = setTimeout(() => { titleClicks = 0; }, 1500);
+  });
 
   renderGrid();
 </script>
