@@ -282,6 +282,30 @@
     }
   }
 
+  // 테스트용) 타이틀 5번 연속 터치 시 테스트 데이터 초기화
+let titleClickCount = 0;
+let titleClickTimer = null;
+
+document.querySelector('header h1').addEventListener('click', () => {
+  titleClickCount++;
+  clearTimeout(titleClickTimer);
+
+  if (titleClickCount >= 5) {
+    if (confirm('[테스트용] 모든 도장 및 수령 기록을 초기화하시겠습니까?')) {
+      localStorage.removeItem('booth_stamps');
+      localStorage.removeItem('booth_reward_redeemed');
+      localStorage.removeItem('booth_reward_time');
+      localStorage.removeItem('stamp_user_id'); // 새 유저 ID 발급
+      location.reload();
+    }
+    titleClickCount = 0;
+  }
+
+  titleClickTimer = setTimeout(() => {
+    titleClickCount = 0;
+  }, 1500);
+});
+  
   // 구글 시트 전송 함수
   function sendSheetLog(boothName) {
     if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("여기에_웹앱_URL")) {
