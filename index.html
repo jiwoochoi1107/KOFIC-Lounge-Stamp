@@ -13,7 +13,7 @@
     header h1 { font-size: 22px; font-weight: 800; color: #111; margin-bottom: 6px; cursor: pointer; user-select: none; }
     header p { font-size: 13px; color: #64748b; line-height: 1.4; }
 
-    /* 스탬프 보드 그리드 */
+    /* 메인 보드 그리드 */
     .stamp-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-bottom: 24px; }
     .stamp-slot {
       width: 95px; height: 110px; background: #fafafa; border: 2px dashed #d1d5db; border-radius: 18px;
@@ -21,13 +21,12 @@
       position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .stamp-slot:active { transform: scale(0.95); }
-    .stamp-slot .badge-icon { width: 48px; height: 48px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #9ca3af; margin-bottom: 8px; overflow: hidden; }
-    .stamp-slot .badge-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .stamp-slot .badge-icon { width: 48px; height: 48px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #9ca3af; margin-bottom: 8px; }
     .stamp-slot .title { font-size: 12px; font-weight: 600; color: #4b5563; text-align: center; }
 
-    /* 도장 획득 시 슬롯 스타일 */
+    /* 메인 보드에서 완료 시 체크 표시 스타일 */
     .stamp-slot.stamped { border: 2px solid #ef4444; background: #fef2f2; }
-    .stamp-slot.stamped .badge-icon { background: #ef4444; color: #fff; font-weight: bold; }
+    .stamp-slot.stamped .badge-icon { background: #ef4444; color: #fff; font-size: 22px; font-weight: bold; }
     .stamp-slot.stamped .title { color: #dc2626; }
 
     /* 상태 박스 */
@@ -62,7 +61,7 @@
     .modal-box p.desc { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 18px; text-align: left; background: #f1f5f9; padding: 12px; border-radius: 10px; white-space: pre-line; }
     .modal-box input {
       width: 100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 10px;
-      font-size: 15px; text-align: center; margin-bottom: 14px; outline: none; transition: border-color 0.2s;
+      font-size: 15px; text-align: center; margin-bottom: 14px; outline: none;
     }
     .modal-box input:focus { border-color: #2563eb; }
     .btn-group { display: flex; gap: 8px; }
@@ -71,16 +70,21 @@
     .btn-close { background: #e2e8f0; color: #475569; }
     .btn-staff-confirm { background: #e11d48; color: #fff; }
 
-    /* [신규] 도장 획득 축하 팝업 전용 스타일 */
+    /* 모달 내부 스탬프 이미지 박스 */
+    .modal-stamp-preview {
+      width: 100px; height: 100px; margin: 0 auto 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-stamp-preview img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* 도장 획득 축하 팝업 전용 스타일 */
     .stamp-acquired-box { background: #fff; width: 100%; max-width: 320px; border-radius: 24px; padding: 28px 20px; text-align: center; }
     .stamp-pop-animation {
-      width: 110px; height: 110px; margin: 0 auto 16px; border-radius: 50%;
-      background: #fef2f2; border: 3px solid #ef4444; display: flex; align-items: center; justify-content: center;
+      width: 110px; height: 110px; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
       animation: stampImpact 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      overflow: hidden; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);
     }
-    .stamp-pop-animation img { width: 100%; height: 100%; object-fit: cover; }
-    .stamp-pop-animation span { font-size: 46px; color: #ef4444; font-weight: bold; }
+    .stamp-pop-animation img { width: 100%; height: 100%; object-fit: contain; }
     @keyframes stampImpact {
       0% { transform: scale(2.2) rotate(-15deg); opacity: 0; }
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
@@ -113,11 +117,13 @@
   </div>
 </div>
 
-<!-- 1. 부스 정보 및 암호 입력 모달 -->
+<!-- 1. 부스 정보 모달 -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
     <h3 id="modalTitle">부스 이름</h3>
     <p class="desc" id="modalDesc">부스 설명 내용</p>
+
+    <!-- 미완료 시: 암호 입력 영역 -->
     <div id="modalInputArea">
       <input type="text" id="passInput" placeholder="부스 인증 암호 입력" autocomplete="off">
       <div class="btn-group">
@@ -125,19 +131,20 @@
         <button class="btn btn-submit" onclick="submitPass()">도장 찍기</button>
       </div>
     </div>
+
+    <!-- 이미 완료 시: PNG 이미지 표시 영역 -->
     <div id="modalAlreadyDone" style="display:none;">
-      <p style="color:#ef4444; font-weight:600; margin-bottom:14px;">이미 완료된 부스입니다!</p>
+      <div class="modal-stamp-preview" id="alreadyDoneStampImg"></div>
+      <p style="color:#ef4444; font-weight:700; margin-bottom:16px;">이미 도장을 획득한 부스입니다!</p>
       <button class="btn btn-close" style="width:100%" onclick="closeModal()">닫기</button>
     </div>
   </div>
 </div>
 
-<!-- 2. [신규] 도장 획득 축하 모달 (세련된 이미지/애니메이션 팝업) -->
+<!-- 2. 도장 획득 축하 모달 (PNG 이미지 팝업) -->
 <div class="modal-overlay" id="stampSuccessModal">
   <div class="stamp-acquired-box">
-    <div class="stamp-pop-animation" id="stampSuccessVisual">
-      <!-- 동적으로 이미지 또는 체크마크 삽입 -->
-    </div>
+    <div class="stamp-pop-animation" id="stampSuccessVisual"></div>
     <h2 id="stampSuccessTitle">스탬프 획득!</h2>
     <p id="stampSuccessSubtitle">부스 미션을 성공적으로 완료했습니다.</p>
     <button class="btn-confirm-acquired" onclick="closeStampSuccessModal()">확인</button>
@@ -167,18 +174,17 @@
   // ▼ 운영 스태프 확인용 비밀번호
   const STAFF_PIN = "0000";
 
-  // 부스 정보, 암호, 및 도장 이미지 경로 (이미지 파일이 있으면 stampImg에 파일명 입력)
+  // 부스 정보 및 도장 이미지 (저장소에 올린 파일명에 맞게 조정하세요)
   const booths = [
-    { id: 1, name: "부스 1", pass: "영화", desc: "위치: A구역 1번\n미션: 부스 방문 후 영화 퀴즈 풀기", stampImg: "stamp1.png" },
-    { id: 2, name: "부스 2", pass: "진흥", desc: "위치: A구역 2번\n미션: 공식 인스타그램 팔로우 인증", stampImg: "stamp2.png" },
-    { id: 3, name: "부스 3", pass: "위원회", desc: "위치: B구역 1번\n미션: 나만의 영화 명대사 카드 만들기", stampImg: "stamp3.png" },
-    { id: 4, name: "부스 4", pass: "가치", desc: "위치: B구역 2번\n미션: 인터랙티브 영상 체험존 참가", stampImg: "stamp4.png" },
-    { id: 5, name: "부스 5", pass: "라운지", desc: "위치: C구역 중앙\n미션: 만족도 설문조사 참여", stampImg: "stamp5.png" }
+    { id: 1, name: "부스 1", pass: "영화", desc: "위치: A구역 1번\n미션: 부스 방문 후 영화 퀴즈 풀기", stampImg: "stamp.png" },
+    { id: 2, name: "부스 2", pass: "진흥", desc: "위치: A구역 2번\n미션: 공식 인스타그램 팔로우 인증", stampImg: "stamp.png" },
+    { id: 3, name: "부스 3", pass: "위원회", desc: "위치: B구역 1번\n미션: 나만의 영화 명대사 카드 만들기", stampImg: "stamp.png" },
+    { id: 4, name: "부스 4", pass: "가치", desc: "위치: B구역 2번\n미션: 인터랙티브 영상 체험존 참가", stampImg: "stamp.png" },
+    { id: 5, name: "부스 5", pass: "라운지", desc: "위치: C구역 중앙\n미션: 만족도 설문조사 참여", stampImg: "stamp.png" }
   ];
 
   let currentBoothIndex = null;
 
-  // 참가자 고유 ID 관리
   let userId = localStorage.getItem('stamp_user_id');
   if (!userId) {
     userId = 'user_' + Math.random().toString(36).substring(2, 9);
@@ -193,6 +199,7 @@
     return localStorage.getItem('booth_reward_redeemed') === 'true';
   }
 
+  // 메인 보드 렌더링: 완료된 곳은 깔끔한 체크(✓) 표시
   function renderGrid() {
     const completed = getCompleted();
     const redeemed = isRedeemed();
@@ -210,14 +217,8 @@
         slot.style.cursor = 'default';
       }
 
-      // 이미지가 존재하면 이미지로, 없으면 체크(✓) 표시
-      let iconContent = isDone ? '✓' : idx + 1;
-      if (isDone && b.stampImg) {
-        iconContent = `<img src="${b.stampImg}" alt="도장" onerror="this.onerror=null; this.parentNode.innerText='✓';">`;
-      }
-
       slot.innerHTML = `
-        <div class="badge-icon">${iconContent}</div>
+        <div class="badge-icon">${isDone ? '✓' : idx + 1}</div>
         <div class="title">${b.name}</div>
       `;
       grid.appendChild(slot);
@@ -247,6 +248,7 @@
     }
   }
 
+  // 부스 모달 열기: 이미 완료된 부스 클릭 시 업로드한 스탬프 PNG 노출
   function openBoothModal(index) {
     if (isRedeemed()) return;
     currentBoothIndex = index;
@@ -260,6 +262,8 @@
 
     if (isDone) {
       document.getElementById('modalInputArea').style.display = 'none';
+      const previewArea = document.getElementById('alreadyDoneStampImg');
+      previewArea.innerHTML = `<img src="${booth.stampImg}" alt="획득한 도장" onerror="this.onerror=null; this.parentNode.innerHTML='<div style=\'font-size:36px;color:#ef4444;\'>✓</div>';">`;
       document.getElementById('modalAlreadyDone').style.display = 'block';
     } else {
       document.getElementById('modalInputArea').style.display = 'block';
@@ -286,21 +290,16 @@
       }
       closeModal();
       renderGrid();
-      // 기존 alert 대신 세련된 획득 팝업 실행
       openStampSuccessModal(targetBooth);
     } else {
       alert("암호가 올바르지 않습니다. 부스 스태프에게 확인해 주세요.");
     }
   }
 
-  // 도장 획득 축하 팝업 열기
+  // 도장 획득 축하 팝업: PNG 이미지 출력
   function openStampSuccessModal(booth) {
     const visual = document.getElementById('stampSuccessVisual');
-    if (booth.stampImg) {
-      visual.innerHTML = `<img src="${booth.stampImg}" alt="도장" onerror="this.onerror=null; this.parentNode.innerHTML='<span>✓</span>';">`;
-    } else {
-      visual.innerHTML = `<span>✓</span>`;
-    }
+    visual.innerHTML = `<img src="${booth.stampImg}" alt="도장" onerror="this.onerror=null; this.parentNode.innerHTML='<span style=\'font-size:46px;color:#ef4444;\'>✓</span>';">`;
 
     document.getElementById('stampSuccessTitle').innerText = `[${booth.name}] 스탬프 획득!`;
     document.getElementById('stampSuccessSubtitle').innerText = "미션을 완료하여 도장이 정상 등록되었습니다.";
@@ -311,7 +310,7 @@
     document.getElementById('stampSuccessModal').classList.remove('active');
   }
 
-  // 스태프 확인 모달 제어
+  // 스태프 확인 모달
   function openStaffModal() {
     document.getElementById('staffPassInput').value = '';
     document.getElementById('staffModalOverlay').classList.add('active');
@@ -352,7 +351,7 @@
     }
   }
 
-  // 타이틀 5번 연속 클릭 시 리셋 기능
+  // 타이틀 5번 클릭 시 초기화 (테스트용)
   let titleClicks = 0;
   let resetTimer = null;
   document.getElementById('mainTitle').addEventListener('click', () => {
