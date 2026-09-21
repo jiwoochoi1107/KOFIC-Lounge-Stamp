@@ -27,11 +27,30 @@
     .stamp-slot.stamped .badge-icon { background: #ef4444; color: #fff; font-weight: bold; }
     .stamp-slot.stamped .title { color: #dc2626; }
 
-    .status-box { background: #f8fafc; border-radius: 12px; padding: 14px; text-align: center; font-size: 14px; font-weight: 600; color: #475569; }
+    /* 상태 알림 박스 */
+    .status-box { background: #f8fafc; border-radius: 12px; padding: 14px; text-align: center; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 12px; }
     .status-box.all-complete { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .status-box.redeemed { background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1; text-decoration: line-through; }
 
+    /* 사은품 수령 버튼 & 배너 */
+    .reward-area { display: none; margin-top: 4px; }
+    .btn-reward {
+      width: 100%; padding: 16px; background: #e11d48; color: #fff; font-size: 16px; font-weight: 700;
+      border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(225,29,72,0.3);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    .reward-completed-badge {
+      display: none; background: #f8fafc; border: 2px dashed #94a3b8; border-radius: 14px;
+      padding: 16px; text-align: center; color: #64748b; font-weight: 700; font-size: 15px; margin-top: 4px;
+    }
+
+    /* 팝업 모달 공통 */
     .modal-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
       justify-content: center; align-items: center; padding: 20px; z-index: 100;
     }
     .modal-overlay.active { display: flex; }
@@ -47,6 +66,7 @@
     .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .btn-submit { background: #2563eb; color: #fff; }
     .btn-close { background: #e2e8f0; color: #475569; }
+    .btn-staff-confirm { background: #e11d48; color: #fff; }
   </style>
 </head>
 <body>
@@ -59,8 +79,20 @@
 
   <div class="stamp-grid" id="stampGrid"></div>
   <div class="status-box" id="statusBox">진행도: 0 / 5</div>
+
+  <!-- 사은품 수령 버튼 영역 (5개 완료 시 활성화) -->
+  <div class="reward-area" id="rewardArea">
+    <button class="btn-reward" onclick="openStaffModal()">🎁 사은품 수령하기 (스태프 확인)</button>
+  </div>
+
+  <!-- 수령 완료 안내 배너 (지급 완료 후 고정) -->
+  <div class="reward-completed-badge" id="rewardCompletedBadge">
+    ✓ 사은품 수령이 완료되었습니다.<br>
+    <span style="font-size: 12px; font-weight: normal; color: #94a3b8;" id="redeemedTimeText"></span>
+  </div>
 </div>
 
+<!-- 1. 부스 정보 및 암호 모달 -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
     <h3 id="modalTitle">부스 이름</h3>
@@ -79,18 +111,36 @@
   </div>
 </div>
 
-<script>
-  // ▼▼▼ [여기에 Apps Script에서 복사한 웹 앱 URL을 붙여넣으세요] ▼▼▼
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-hc5yc47KEGOjyZREZKCt0p7RezgLc8-AAKkQOYsnZ-w-TmJTyT1R-6PAg7AsxUOTyg/exec";
-  // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+<!-- 2. 스태프 확인 모달 -->
+<div class="modal-overlay" id="staffModalOverlay">
+  <div class="modal-box">
+    <h3 style="color:#e11d48;">운영 본부 확인</h3>
+    <p class="desc" style="background:#fff1f2; color:#be123c;">
+      ※ 주의: 본 화면은 <strong>운영 스태프 전용</strong>입니다.<br>
+      확인 후에는 재수령 및 추가 참여가 불가능합니다.
+    </p>
+    <input type="password" id="staffPassInput" placeholder="스태프 인증 핀번호 입력" autocomplete="off">
+    <div class="btn-group">
+      <button class="btn btn-close" onclick="closeStaffModal()">취소</button>
+      <button class="btn btn-staff-confirm" onclick="confirmRedeem()">지급 완료 처리</button>
+    </div>
+  </div>
+</div>
 
-  // 부스 정보 및 정답 암호 설정
+<script>
+  // ▼ Apps Script 웹 앱 URL 입력
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-hc5yc47KEGOjyZREZKCt0p7RezgLc8-AAKkQOYsnZ-w-TmJTyT1R-6PAg7AsxUOTyg/exec";
+
+  // ▼ 운영 스태프 확인용 비밀번호 (원하시는 4자리 등으로 변경하세요)
+  const STAFF_PIN = "0000";
+
+  // 부스 정보 및 정답 암호
   const booths = [
     { id: 1, name: "부스 1", pass: "영화", desc: "위치: A구역 1번\n미션: 부스 방문 후 영화 퀴즈 풀기" },
     { id: 2, name: "부스 2", pass: "진흥", desc: "위치: A구역 2번\n미션: 공식 인스타그램 팔로우 인증" },
     { id: 3, name: "부스 3", pass: "위원회", desc: "위치: B구역 1번\n미션: 나만의 영화 명대사 카드 만들기" },
-    { id: 4, name: "부스 4", pass: "가치", desc: "위치: B구역 2번\n미션: 인터랙티브 영상 체험존 참가" },
-    { id: 5, name: "부스 5", pass: "라운지", desc: "위치: C구역 중앙\n미션: 만족도 설문조사 참여" }
+    { id: 4, name: "부스 4", pass: "사랑", desc: "위치: B구역 2번\n미션: 인터랙티브 영상 체험존 참가" },
+    { id: 5, name: "부스 5", pass: "축제", desc: "위치: C구역 중앙\n미션: 만족도 설문조사 참여" }
   ];
 
   let currentBoothIndex = null;
@@ -106,8 +156,13 @@
     return JSON.parse(localStorage.getItem('booth_stamps') || '[]');
   }
 
+  function isRedeemed() {
+    return localStorage.getItem('booth_reward_redeemed') === 'true';
+  }
+
   function renderGrid() {
     const completed = getCompleted();
+    const redeemed = isRedeemed();
     const grid = document.getElementById('stampGrid');
     grid.innerHTML = '';
 
@@ -115,7 +170,13 @@
       const isDone = completed.includes(b.id);
       const slot = document.createElement('div');
       slot.className = `stamp-slot ${isDone ? 'stamped' : ''}`;
-      slot.onclick = () => openBoothModal(idx);
+      
+      // 이미 사은품을 받았으면 슬롯 클릭 비활성화
+      if (!redeemed) {
+        slot.onclick = () => openBoothModal(idx);
+      } else {
+        slot.style.cursor = 'default';
+      }
 
       slot.innerHTML = `
         <div class="badge-icon">${isDone ? '✓' : idx + 1}</div>
@@ -125,14 +186,31 @@
     });
 
     const statusBox = document.getElementById('statusBox');
-    statusBox.innerText = `진행도: ${completed.length} / ${booths.length}`;
-    if (completed.length === booths.length) {
+    const rewardArea = document.getElementById('rewardArea');
+    const rewardCompletedBadge = document.getElementById('rewardCompletedBadge');
+
+    if (redeemed) {
+      statusBox.className = 'status-box redeemed';
+      statusBox.innerText = '이벤트 참여 및 수령 완료';
+      rewardArea.style.display = 'none';
+      rewardCompletedBadge.style.display = 'block';
+      const time = localStorage.getItem('booth_reward_time') || '';
+      if (time) document.getElementById('redeemedTimeText').innerText = `수령 시각: ${time}`;
+    } else if (completed.length === booths.length) {
       statusBox.className = 'status-box all-complete';
-      statusBox.innerText = '★ 모든 스탬프 획득 완료! 사은품을 받아가세요 ★';
+      statusBox.innerText = '★ 모든 도장 획득 완료! ★';
+      rewardArea.style.display = 'block';
+      rewardCompletedBadge.style.display = 'none';
+    } else {
+      statusBox.className = 'status-box';
+      statusBox.innerText = `진행도: ${completed.length} / ${booths.length}`;
+      rewardArea.style.display = 'none';
+      rewardCompletedBadge.style.display = 'none';
     }
   }
 
   function openBoothModal(index) {
+    if (isRedeemed()) return;
     currentBoothIndex = index;
     const booth = booths[index];
     const completed = getCompleted();
@@ -166,25 +244,56 @@
       if (!completed.includes(targetBooth.id)) {
         completed.push(targetBooth.id);
         localStorage.setItem('booth_stamps', JSON.stringify(completed));
-
-        // 구글 시트로 로그 전송
-        if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("여기에_웹앱_URL")) {
-          fetch(GOOGLE_SCRIPT_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: userId,
-              boothName: targetBooth.name
-            })
-          }).catch(err => console.log("전송 로그:", err));
-        }
+        sendSheetLog(targetBooth.name);
       }
       closeModal();
       renderGrid();
       alert(`[${targetBooth.name}] 스탬프가 찍혔습니다!`);
     } else {
       alert("암호가 올바르지 않습니다. 부스 스태프에게 확인해 주세요.");
+    }
+  }
+
+  // 스태프 모달 제어
+  function openStaffModal() {
+    document.getElementById('staffPassInput').value = '';
+    document.getElementById('staffModalOverlay').classList.add('active');
+  }
+
+  function closeStaffModal() {
+    document.getElementById('staffModalOverlay').classList.remove('active');
+  }
+
+  // 스태프 수령 확인 처리
+  function confirmRedeem() {
+    const pin = document.getElementById('staffPassInput').value.trim();
+    if (pin === STAFF_PIN) {
+      const nowStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      localStorage.setItem('booth_reward_redeemed', 'true');
+      localStorage.setItem('booth_reward_time', nowStr);
+
+      sendSheetLog("★ 사은품 수령 완료");
+
+      closeStaffModal();
+      renderGrid();
+      alert("사은품 지급 확인 처리가 완료되었습니다.");
+    } else {
+      alert("스태프 비밀번호가 일치하지 않습니다.");
+    }
+  }
+
+  // 구글 시트 전송 함수
+  function sendSheetLog(boothName) {
+    if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("여기에_웹앱_URL")) {
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId,
+          boothName: boothName
+        })
+      }).catch(err => console.log("전송 로그:", err));
     }
   }
 
