@@ -337,19 +337,14 @@
     }
   }
 
-  function sendSheetLog(boothName) {
-    if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx-hc5yc47KEGOjyZREZKCt0p7RezgLc8-AAKkQOYsnZ-w-TmJTyT1R-6PAg7AsxUOTyg/exec")) {
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userId,
-          boothName: boothName
-        })
-      }).catch(err => console.log("전송 로그:", err));
-    }
-  }
+function sendSheetLog(boothName) {
+  if (!GOOGLE_SCRIPT_URL) return;
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify({ userId: userId, boothName: boothName })
+  }).catch(err => console.log("전송 로그:", err));
+}
 
   // 타이틀 5번 클릭 시 초기화 (테스트용)
   let titleClicks = 0;
