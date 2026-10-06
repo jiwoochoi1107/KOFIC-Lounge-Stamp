@@ -158,7 +158,7 @@
     <p class="desc" style="background:#fff1f2; color:#be123c;">
       이 화면을 스태프에게 보여 주세요!<br>
       부스 스태프가 상품 교환을 도와드리겠습니다.<br>
-      상품 수령처 : 공정성장센터 부스 <br>
+      <strong>상품 수령처 : 공정성장센터 부스</strong><br>
       <br>
       ※ 주의: 본 화면은 <strong>운영 스태프 전용</strong>입니다.<br>
       확인 후에는 재수령 및 추가 참여가 불가능합니다.
@@ -349,25 +349,6 @@ function sendSheetLog(boothName) {
     body: JSON.stringify({ userId: userId, boothName: boothName })
   }).catch(err => console.log("전송 로그:", err));
 }
-
-  // 타이틀 5번 클릭 시 초기화 (테스트용)
-  let titleClicks = 0;
-  let resetTimer = null;
-  document.getElementById('mainTitle').addEventListener('click', () => {
-    titleClicks++;
-    clearTimeout(resetTimer);
-    if (titleClicks >= 5) {
-      if (confirm('[테스트 모드] 모든 도장 및 수령 기록을 초기화하시겠습니까?')) {
-        localStorage.removeItem('booth_stamps');
-        localStorage.removeItem('booth_reward_redeemed');
-        localStorage.removeItem('booth_reward_time');
-        localStorage.removeItem('stamp_user_id');
-        location.reload();
-      }
-      titleClicks = 0;
-    }
-    resetTimer = setTimeout(() => { titleClicks = 0; }, 1500);
-  });
 
   renderGrid();
 </script>
